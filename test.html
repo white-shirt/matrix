@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+
+  <style>
+    * {
+      padding: 0;
+      margin: 0;
+    }
+
+    #canvasBg {
+      position: absolute;
+    }
+
+    #Connections {
+      position: absolute;
+    }
+
+    #drawLine {
+      position: absolute;
+    }
+
+    #btn {
+      position: absolute;
+      top: 500px;
+      left: 450px;
+    }
+
+    #repeal {
+      position: absolute;
+      top: 500px;
+      left: 380px;
+    }
+
+    #add {
+      position: absolute;
+      top: 500px;
+      left: 320px; 
+    }
+
+    #sub {
+      position: absolute;
+      top: 500px;
+      left: 260px; 
+    }
+  </style>
+</head>
+
+<body>
+  <canvas id="canvasBg"></canvas>
+  <canvas id="Connections"></canvas>
+  <canvas id="drawLine"></canvas>
+  <button id="btn" class="btngroup" data-attr = "start">开始</button>
+  <button id="repeal" class="btngroup" data-attr = "repeal">上一步</button>
+  <button id="add" class="btngroup" data-attr = "add">加</button>
+  <button id="sub" class="btngroup" data-attr = "sub">减</button>
+  <script>
+    /*
+    *  初始化画布
+    */
+    var canvasBg = document.querySelector('#canvasBg');
+    var Connections = document.querySelector('#Connections');
+    var drawLine = document.querySelector('#drawLine');
+    var btngroup = document.querySelectorAll('.btngroup');
+    var ctxBg = canvasBg.getContext('2d');
+    var ctxConnections = Connections.getContext('2d');
+    var ctxDrawline = drawLine.getContext('2d');
+    (function initBg() {
+      canvasBg.width = 500;
+      canvasBg.height = 500;
+      canvasBg.style.background = '#eee';
+    })();
+    (function initConnections() {
+      Connections.width = 500;
+      Connections.height = 500;
+      Connections.style.background = "rgba(255,255,255,0)";
+    })();
+    (function initDrawLine() {
+      drawLine.width = 500;
+      drawLine.height = 500;
+      drawLine.style.background = "rgba(255,255,255,0)";
+      var width = drawLine.width, height = drawLine.height;
+      if (window.devicePixelRatio) {
+        drawLine.style.width = width + "px";
+        drawLine.style.height = height + "px";
+        drawLine.height = height * window.devicePixelRatio;
+        drawLine.width = width * window.devicePixelRatio;
+        ctxDrawline.scale(window.devicePixelRatio, window.devicePixelRatio);
+      }
+    })();
+    /*
+    *   矩阵点
+    */
+    var ConnectionsObj = function () {
+      this.x = [];
+      this.y = [];
+      this.num = 225;
+      this.r = 3;
+      this.width = 1;
+      this.color = "#999";
+    };
+    ConnectionsObj.prototype.init = function () {
+      for (var i = 1; i < Math.sqrt(this.num) - 1; i++) {
+        this.x[i] = new Array();
+        this.y[i] = new Array();
+        for (var j = 1; j < Math.sqrt(this.num) - 1; j++) {
+          this.x[i][j] = Math.round(Connections.width / (Math.sqrt(this.num) - 1)) * i;
+          this.y[i][j] = Math.round(Connections.height / (Math.sqrt(this.num) - 1)) * j;
+        }
+      }
+    };
+    ConnectionsObj.prototype.draw = function () {
+      ctxConnections.clearRect(0, 0, Connections.width, Connections.height);
+      for (var i = 1; i < Math.sqrt(this.num) - 1; i++) {
+        for (var j = 1; j < Math.sqrt(this.num) - 1; j++) {
+          ctxConnections.strokeStyle = this.color;
+          ctxConnections.lineWidth = this.width;
+          ctxConnections.beginPath();
+          ctxConnections.arc(this.x[i][j], this.y[i][j], this.r, 0, 2 * Math.PI);
+          ctxConnections.stroke();
+        }
+      }
+    };
+    var matrix = new ConnectionsObj();
+    matrix.init();
+    matrix.draw();
+    /*
+    *  点线
+    */
+    var DrawLineObj = function () {
+      this.connectionsArr = [];
+      this.cirR = 5;
+      this.lineW = 2;
+    };
+    DrawLineObj.prototype.choosePoint = function (x, y) {
+      var xIndex = Math.round(x / (Connections.width / (Math.sqrt(matrix.num) - 1)));
+      var yIndex = Math.round(y / (Connections.width / (Math.sqrt(matrix.num) - 1)));
+      xIndex === 0 ? xIndex = 1 : xIndex = xIndex;
+      yIndex === 0 ? yIndex = 1 : yIndex = yIndex;
+      xIndex === matrix.x[1].length ? xIndex = matrix.x[1].length - 1 : xIndex = xIndex;
+      yIndex === matrix.y[1].length ? yIndex = matrix.y[1].length - 1 : yIndex = yIndex;
+      console.log(xIndex, yIndex)
+      console.log(matrix.x[xIndex][1], matrix.y[1][yIndex])
+      this.connectionsArr.push({ "x": matrix.x[xIndex][1], "y": matrix.y[1][yIndex] });
+      return this.connectionsArr;
+    };
+    DrawLineObj.prototype.init = function () {
+      this.connectionsArr = [];
+      ctxDrawline.clearRect(0, 0, drawLine.width, drawLine.height);  
+    };
+    DrawLineObj.prototype.drawCircle = function () {
+      ctxDrawline.clearRect(0, 0, drawLine.width, drawLine.height);
+      ctxDrawline.fillStyle = "#555";
+      for (var i = 0; i < this.connectionsArr.length; i++) {
+        ctxDrawline.beginPath();
+        ctxDrawline.arc(this.connectionsArr[i].x, this.connectionsArr[i].y, this.cirR, 0, 2 * Math.PI);
+        ctxDrawline.fill();
+      }
+    };
+    DrawLineObj.prototype.drawline = function () {
+      ctxDrawline.clearRect(0, 0, drawLine.width, drawLine.height);
+      ctxDrawline.strokeStyle = "#555";
+      this.drawCircle();
+      for (var i = 0; i < this.connectionsArr.length - 1; i++) {
+        ctxDrawline.beginPath();
+        ctxDrawline.moveTo(this.connectionsArr[i].x, this.connectionsArr[i].y);
+        ctxDrawline.lineTo(this.connectionsArr[i + 1].x, this.connectionsArr[i + 1].y);
+        ctxDrawline.stroke();
+      }
+    };
+    var points = new DrawLineObj();
+    /*
+    *  按钮
+    */
+    var AddSubBtnObj = function () {
+      this.index = Math.sqrt(matrix.num);
+    };
+    AddSubBtnObj.prototype.tap = function (ele) {
+      if (ele == 'add') {
+        this.index++;
+        if (this.index >= 20) {
+          this.index = 20;
+        }
+      }
+      if (ele == 'sub') {
+        this.index--;
+        if (this.index <= 5) {
+          this.index = 5;
+        }
+      };
+      if (ele == 'repeal') {
+        if (points.connectionsArr.length >= 1) {
+          points.connectionsArr.splice(points.connectionsArr.length - 1, 1);
+          points.drawline();
+          return;
+        }
+      };
+      if (ele == 'start') {
+        var curOrder = toOrder(points.connectionsArr);
+        console.log(curOrder)
+        return;
+      };
+      matrix.num = Math.pow(this.index, 2);
+      points.init();
+      matrix.init();
+      matrix.draw();
+    }
+
+    var addSubBtn = new AddSubBtnObj();
+    /*
+    *  根据坐标生成转弯角度和前进距离  
+    */
+    function toOrder(arr) {
+      var orderArr = [];
+      if (arr.length > 1) {
+        for (var i = 0; i < arr.length - 1; i++) {
+          var disX = Math.pow(arr[i].x - arr[i + 1].x, 2);
+          var disY = Math.pow(arr[i].y - arr[i + 1].y, 2);
+          var step = Math.round(Math.sqrt(disX + disY) / (Connections.width / (Math.sqrt(matrix.num) - 1)));
+          orderArr.push("前进" + step + "步");
+        }
+      }
+      return orderArr;
+    }
+    /*
+    *  点击事件
+    */
+    drawLine.onclick = function (e) {
+      var event = e || window.event;
+      var tapX = event.clientX, tapY = event.clientY;
+      points.choosePoint(tapX, tapY);
+      points.drawline();
+    };
+
+    for (var i = 0; i < btngroup.length; i++) {
+      btngroup[i].addEventListener('click', function(e) {
+        addSubBtn.tap(this.getAttribute('data-attr'));  
+      },false);
+    }
+  </script>
+</body>
+
+</html>
