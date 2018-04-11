@@ -94,6 +94,10 @@
       }
     })();
     /*
+    *  命令集合
+    */
+    var sendOrderArr = [];
+    /*
     *   矩阵点
     */
     var ConnectionsObj = function () {
@@ -102,7 +106,7 @@
       this.num = 225;
       this.r = 3;
       this.width = 1;
-      this.color = "#999";
+      this.color = "yellowgreen";
     };
     ConnectionsObj.prototype.init = function () {
       for (var i = 1; i < Math.sqrt(this.num) - 1; i++) {
@@ -186,23 +190,26 @@
         if (this.index >= 20) {
           this.index = 20;
         }
+        sendOrderArr = [];
       }
       if (ele == 'sub') {
         this.index--;
         if (this.index <= 5) {
           this.index = 5;
         }
+        sendOrderArr = [];
       };
       if (ele == 'repeal') {
         if (points.connectionsArr.length >= 1) {
           points.connectionsArr.splice(points.connectionsArr.length - 1, 1);
           points.drawline();
+          sendOrderArr = [];
           return;
         }
       };
       if (ele == 'start') {
-        var curOrder = toOrder(points.connectionsArr);
-        console.log(curOrder)
+        toOrder(points.connectionsArr);
+        console.log(sendOrderArr)
         return;
       };
       matrix.num = Math.pow(this.index, 2);
@@ -215,18 +222,53 @@
     /*
     *  根据坐标生成转弯角度和前进距离  
     */
+    // 前进距离
     function toOrder(arr) {
-      var orderArr = [];
       if (arr.length > 1) {
         for (var i = 0; i < arr.length - 1; i++) {
           var disX = Math.pow(arr[i].x - arr[i + 1].x, 2);
           var disY = Math.pow(arr[i].y - arr[i + 1].y, 2);
           var step = Math.round(Math.sqrt(disX + disY) / (Connections.width / (Math.sqrt(matrix.num) - 1)));
-          orderArr.push("前进" + step + "步");
+          sendOrderArr.push("前进" + step + "步");
+          if (i < arr.length - 2) {
+            var toAngle = new toAngleObj(arr[i].x,arr[i].y,arr[i + 1].x,arr[i + 1].y,arr[i + 2].x,arr[i + 2].y);
+          }
         }
       }
-      return orderArr;
-    }
+    };
+    var toAngleObj = function (x1,y1,x2,y2,x3,y3) {
+      this.Angle;
+      this.getRotateAngle = function () {
+        var va_x = x3 - x2;
+        var va_y = y3 - y2;
+        var vb_x = x1 - x2;
+        var vb_y = y1 - y2;
+        var productValue = (va_x * vb_x) + (va_y * vb_y);
+        var va_val = Math.sqrt(va_x * va_x + va_y * va_y);
+        var vb_val = Math.sqrt(vb_x * vb_x + vb_y * vb_y);
+        var cosValue = productValue / (va_val * vb_val);
+        if (cosValue < -1 && cosValue > -2) {
+          cosValue = -1;
+        } else if (cosValue > 1 && cosValue < 2) {
+          cosValue = 1;
+        }
+        return Math.round(Math.acos(cosValue) * 180 / Math.PI);
+      };
+      this.direction = function () {
+        var flag = (x2 - x1) * (y3 - y1) - (x3 - x1) * (y2 - y1);
+        if (flag > 0) {
+          this.Angle = "顺时针" + (180 - this.getRotateAngle());
+        } else if (flag == 0) {
+          this.Angle = "直行" + (180 - this.getRotateAngle());
+        } else {
+          this.Angle = "逆时针" + (180 - this.getRotateAngle());
+        }
+        sendOrderArr.push(this.Angle);
+      }
+      this.direction();
+    };
+
+
     /*
     *  点击事件
     */
